@@ -14,6 +14,8 @@ using iTextSharp.text.pdf;
 using Newtonsoft.Json;
 using Color = System.Drawing.Color;
 using Font = System.Drawing.Font;
+using System.Collections;
+using static iTextSharp.text.pdf.AcroFields;
 
 namespace MaFoi.Charts.Controllers
 {
@@ -39,6 +41,17 @@ namespace MaFoi.Charts.Controllers
 
         private Byte[] Chart(string chartTitle, List<dynamic> chartData, SeriesChartType chartType)
         {
+            if (SeriesChartType.Pie.Equals(chartType))
+                chartData = chartData.FindAll(x => x.Count > 0);
+            else
+            {
+                if (chartTitle.Equals("Overall Rule score %"))
+                    chartData = chartData.FindAll(x => x.Ycounts[0] > 0);
+                else
+                    chartData = chartData.FindAll(x => x.Ycounts[0] > 0 || x.Ycounts[1] > 0);
+
+            }
+
             var chart = new Chart
             {
                 Width = 700,
@@ -62,16 +75,130 @@ namespace MaFoi.Charts.Controllers
             chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
             chart.ChartAreas[0].AxisY.MajorGrid.Enabled = false;
 
-            chart.Series.Add("");
-            chart.Series[0].ChartType = chartType;
 
-            List<string> GreenColorLegends = new List<string> { "Compliant", "Audited" };
-            foreach (var q in chartData)
+            //chart.Series.Add("");
+            // chart.Series[0].ChartType = chartType;
+
+            // List<string> GreenColorLegends = new List<string> { "Compliant", "Audited" };
+
+            if (SeriesChartType.Pie.Equals(chartType))
             {
-                chart.Series[0].Color = GreenColorLegends.Contains(q.Legend) ? Color.Green : Color.Red;
-                chart.Series[0].Points.AddXY(q.Legend, Convert.ToDouble(q.Count));
+                chart.Series.Add(new Series("data"));
+                chart.Legends.Add(new Legend("Stores"));
+                chart.Series[0].ChartType = SeriesChartType.Pie;
+                //chart.Series[0]["PieLabelStyle"] = "Outside";
+                //chart.Series[0]["PieLineColor"] = "Black";
+
+                chart.Series[0].Label = "(" + "#VALY" + ")" + "#PERCENT{P0}";
+                // chart.Series[0].Label = "#PERCENT{P0}";
+                chart.Series[0].Points.DataBindXY(
+                    chartData.Select(data => data.Legend.ToString()).ToArray(),
+                    chartData.Select(data => data.Count).ToArray()
+                    );
+
+
+                chart.Series[0]["PieLabelStyle"] = "inside";
+                chart.Series[0].Legend = "Stores";
+                chart.Series[0].LegendText = "#VALX";
+                chart.Legends["Stores"].Docking = Docking.Right;
+
+                foreach (Series charts in chart.Series)
+                {
+                    foreach (DataPoint point in charts.Points)
+                    {
+
+                        switch (point.AxisLabel)
+                        {
+                            case "Compliant": point.Color = Color.Green; break;
+                            case "Non-Compliance": point.Color = Color.Orange; break;
+                            case "Not-Applicable": point.Color = Color.Gray; break;
+                            case "Rejected": point.Color = Color.Red; break;
+                        }
+                        //point.Label = string.Format("{0:0} - {1}", point.YValues[0], point.AxisLabel);
+
+                    }
+                }
+
+                //foreach (var q in chartData)
+                //{
+                //    chart.Series.Add(new Series(q.Legend));
+                //    switch (q.Legend)
+                //    {
+
+                //        case "Compliant":
+                //            {
+                //                chart.Series[q.Legend].Color = Color.Green;
+                //                chart.Series[q.Legend].Label = q.Count + "(" + q.Percantage + ")";
+                //                chart.Series[q.Legend].Points.DataBind( chartData, q.Legend, Convert.ToDouble(q.Count),q.Percantage);
+
+                //                //chart.Series[0].XValueMember=q.Legend;
+                //                //chart.Series[0].Points.Add(Convert.ToDouble(q.Count));
+                //                break;
+                //            }
+                //        case "Non-Compliance":
+                //            {
+                //                chart.Series[q.Legend].Color = Color.Yellow;
+                //                chart.Series[q.Legend].Label = q.Count + "(" + q.Percantage + ")";
+                //                chart.Series[q.Legend].Points.DataBind(chartData, q.Legend, Convert.ToDouble(q.Count), q.Percantage);
+
+                //                //chart.Series[0].LabelToolTip = q.Legend;
+                //                //chart.Series[0].Points.Add(Convert.ToDouble(q.Count));
+                //                break;
+                //            }
+                //        case "Not-Applicable":
+                //            {
+                //                chart.Series[q.Legend].Color = Color.Gray;
+                //                chart.Series[q.Legend].Label = q.Count + "(" + q.Percantage + ")";
+                //                chart.Series[q.Legend].Points.DataBind(chartData, q.Legend, Convert.ToDouble(q.Count), q.Percantage);
+
+                //                //chart.Series[0].LabelToolTip = q.Legend;
+                //                //chart.Series[0].Points.AddY(Convert.ToDouble(q.Count));
+                //                break;
+                //            }
+                //        case "Rejected":
+                //            {
+                //                chart.Series[q.Legend].Color = Color.Red;
+                //                chart.Series[q.Legend].Label = q.Count + "(" + q.Percantage + ")";
+                //                chart.Series[q.Legend].Points.DataBind(chartData, q.Legend, Convert.ToDouble(q.Count), q.Percantage);
+
+                //                //chart.Series[0].LabelToolTip = q.Legend;
+                //                //chart.Series[0].Points.AddY(Convert.ToDouble(q.Count));
+                //                break;
+                //            }
+                //    }
+                //    //chart.Series[0].Color = GreenColorLegends.Contains(q.Legend) ? Color.Green : Color.Red;
+                //    //chart.Series[0].Points.AddXY(q.Legend, Convert.ToDouble(q.Count));
+                //}
             }
-            using (var chartimage = new MemoryStream())
+            else
+            {
+
+
+                chart.Legends.Add(new Legend("Stores"));
+
+                foreach (var q in chartData)
+                {
+                    chart.Series.Add(new Series(q.Legend));
+
+                    chart.Series[q.Legend].IsValueShownAsLabel = true;
+                    chart.Series[q.Legend].ChartType = SeriesChartType.StackedBar;
+                    chart.Series[q.Legend].LabelToolTip = q.Legend.ToString();
+                    // chart.Series[p].Label = p.ToString();                   
+                    chart.Series[q.Legend].Label = "(" + "#VALY" + ") " + "#PERCENT{P0}";
+                    chart.Series[q.Legend].LabelAngle = 45;
+                    chart.Series[q.Legend].Color = GetColor1(q.Legend.ToString());
+                    chart.Series[q.Legend].Points.DataBindXY(q.Xcounts, q.Ycounts);
+
+                    chart.Series[q.Legend]["PieLabelStyle"] = "inside";
+                    chart.Series[q.Legend].Legend = "Stores";
+                    chart.Series[q.Legend].LegendText = q.Legend.ToString();
+
+                }
+                chart.Legends["Stores"].Docking = Docking.Right;
+            }
+            using (var chartimage = new MemoryStream())////////////////////0
+
+
             {
                 chart.SaveImage(chartimage, ChartImageFormat.Png);
                 return chartimage.GetBuffer();
@@ -120,10 +247,10 @@ namespace MaFoi.Charts.Controllers
             leftSummaryData.Add(new KeyValuePair<string, string>("Location", reportData.AuditReportSummary.Location));
             leftSummaryData.Add(new KeyValuePair<string, string>("Month & Year", string.Format("{0} ({1})", reportData.AuditReportSummary.Month, reportData.AuditReportSummary.Year)));
 
-            float[] tblLeftSummaryWidths = new float[] { 50f, 50f };
+            float[] tblLeftSummaryWidths = new float[] { 40f, 60f };
 
             PdfPTable tblLeftSummary = new PdfPTable(tblLeftSummaryWidths);
-            tblLeftSummary.SpacingBefore = 10f;
+            tblLeftSummary.SpacingBefore = 20f;
             tblLeftSummary.SpacingAfter = 10f;
 
             PdfPCell cellLeftSummaryHeading = new PdfPCell(new Phrase("Audit Submitted To", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
@@ -163,10 +290,10 @@ namespace MaFoi.Charts.Controllers
             RightSummaryData.Add(new KeyValuePair<string, string>("Compliant", reportData.AuditReportSummary.Compliant.ToString()));
             RightSummaryData.Add(new KeyValuePair<string, string>("Not-Applicable", reportData.AuditReportSummary.NotApplicable.ToString()));
 
-            float[] tblRightSummaryWidths = new float[] { 50f, 50f };
+            float[] tblRightSummaryWidths = new float[] { 60f, 40f };
 
             PdfPTable tblRightSummary = new PdfPTable(tblRightSummaryWidths);
-            tblRightSummary.SpacingBefore = 10f;
+            tblRightSummary.SpacingBefore = 20f;
             tblRightSummary.SpacingAfter = 10f;
 
             PdfPCell cellRightSummaryHeading = new PdfPCell(new Phrase("Audit Summary", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
@@ -200,7 +327,7 @@ namespace MaFoi.Charts.Controllers
             #endregion Right Summary            
 
             PdfPTable tblChartAndSummary = new PdfPTable(2);
-            tblChartAndSummary.SpacingBefore = 10f;
+            tblChartAndSummary.SpacingBefore = 20f;
             tblChartAndSummary.SpacingAfter = 10f;
 
             PdfPCell cellLeftSummary = new PdfPCell(tblLeftSummary);
@@ -216,16 +343,48 @@ namespace MaFoi.Charts.Controllers
 
             var chartData = new List<dynamic>();
 
+            //chartData.Add(new
+            //{
+            //    Legend = "Audited",
+            //    Count = reportData.AuditorPerformance.Audited
+            //});
+            //chartData.Add(new
+            //{
+            //    Legend = "Not Audited",
+            //    Count = reportData.AuditorPerformance.NotAudited
+            //});
+            int compliantcount = reportData.ToDoList.Count(l => l.AuditStatus == "Compliant");
+            int noncompliantcount = reportData.ToDoList.Count(l => l.AuditStatus == "Non-Compliance");
+            int nonapplicablecount = reportData.ToDoList.Count(l => l.AuditStatus == "Not-Applicable");
+            int rejectcount = reportData.ToDoList.Count(l => l.Status == "Rejected");
+            int total = compliantcount + noncompliantcount + nonapplicablecount + rejectcount;
             chartData.Add(new
             {
-                Legend = "Audited",
-                Count = reportData.AuditorPerformance.Audited
+                Legend = "Compliant",
+                Percantage = ((compliantcount * 100) / total).ToString() + "%",
+                Count = reportData.ToDoList.Count(l => l.AuditStatus == "Compliant")
+
             });
             chartData.Add(new
             {
-                Legend = "Not Audited",
-                Count = reportData.AuditorPerformance.NotAudited
+                Legend = "Non-Compliance",
+                Percantage = ((noncompliantcount * 100) / total).ToString() + "%",
+                Count = reportData.ToDoList.Count(l => l.AuditStatus == "Non-Compliance")
+
             });
+            chartData.Add(new
+            {
+                Legend = "Not-Applicable",
+                Percantage = ((nonapplicablecount * 100) / total).ToString() + "%",
+                Count = reportData.ToDoList.Count(l => l.AuditStatus == "Not-Applicable")
+            });
+            chartData.Add(new
+            {
+                Legend = "Rejected",
+                Percantage = ((rejectcount * 100) / total).ToString() + "%",
+                Count = reportData.ToDoList.Count(l => l.Status == "Rejected")
+            });
+
 
             var image = Image.GetInstance(Chart("Overall score %", chartData, SeriesChartType.Pie));
             image.Alignment = 1;
@@ -233,22 +392,113 @@ namespace MaFoi.Charts.Controllers
             doc.Add(image);
 
 
+            //activity bar chart
             chartData = new List<dynamic>();
-            chartData.Add(new
+            string[] typelst = reportData.ToDoList.Select(t => t.Activity.Type).Distinct().ToArray();
+            List<string> auditstatus = new List<string>()
             {
-                Legend = "Compliant",
-                Count = reportData.ToDoList.Count(l => l.AuditStatus == "Compliant")
-            });
-            chartData.Add(new
+                "Compliant",   "Non-Compliance",     "Not-Applicable",       "Rejected"
+            };
+            foreach (var p in auditstatus)
             {
-                Legend = "Non Compliant",
-                Count = reportData.ToDoList.Count(l => l.AuditStatus != "Compliant")
-            });
+                List<int> yvalues = new List<int>();
+                List<string> xvalues = new List<string>();
 
-            image = Image.GetInstance(Chart("Overall compliance score %", chartData, SeriesChartType.Bar));
+                foreach (var item in typelst)
+                {
+                    xvalues.Add(item);
+                    if (p.Equals("Rejected"))
+                        yvalues.Add(reportData.ToDoList.Count(l => l.Activity.Type.Equals(item) && l.Status.Equals(p)));
+                    else
+                        yvalues.Add(reportData.ToDoList.Count(l => l.Activity.Type.Equals(item) && l.AuditStatus.Equals(p)));
+                }
+                chartData.Add(new
+                {
+                    Legend = p,
+                    Xcounts = xvalues,
+                    Ycounts = yvalues
+                });
+
+            }
+     
+
+            //chartData.Add(new
+            //{
+            //    Legend = "Compliant",
+            //    Count = reportData.ToDoList.Count(l => l.AuditStatus == "Compliant")
+            //});
+            //chartData.Add(new
+            //{
+            //    Legend = "Non Compliant",
+            //    Count = reportData.ToDoList.Count(l => l.AuditStatus != "Compliant")
+            //});
+
+            image = Image.GetInstance(Chart("Overall Activity score %", chartData, SeriesChartType.StackedBar));
             image.Alignment = 1;
             image.ScalePercent(75f);
             doc.Add(image);
+
+            //rule bar chart
+            var risklst = reportData.RuleComplianceDetails.Select(r => r.Risk).Distinct().ToList();
+            if (risklst.Count == 0)
+            {
+                risklst = new List<string>() { "Low" };
+            }
+            chartData = new List<dynamic>();
+            foreach (var p in auditstatus)
+            {
+                List<int> yrulvalues = new List<int>();
+                List<string> xRulevalues = new List<string>();
+                foreach (var rl in risklst)
+                {
+                    int i = 0;
+                    xRulevalues.Add(rl);
+                    if (p.Equals("Rejected"))
+                    {
+                        var count1 = from t in reportData.ToDoList
+                                         // ForumID part removed from both sides: LINQ should do that for you.
+                                         // Added "into postsInForum" to get a group join
+                                     join r in reportData.RuleComplianceDetails on t.RuleId equals r.RuleId into postsInForum
+                                     select new { postcount = postsInForum.Count(r => r.Risk.Equals(rl) && t.Status.Equals(p)) };
+
+                        foreach (var item in count1)
+                        {
+                            i += item.postcount;
+                        }
+                        yrulvalues.Add(i);
+
+                    }
+                    else
+                    {
+                        var count = from t in reportData.ToDoList
+                                        // ForumID part removed from both sides: LINQ should do that for you.
+                                        // Added "into postsInForum" to get a group join
+                                    join r in reportData.RuleComplianceDetails on t.RuleId equals r.RuleId into postsInForum
+                                    select new { postcount = postsInForum.Count(r => r.Risk.Equals(rl) && t.AuditStatus.Equals(p)) };
+
+                        foreach (var item in count)
+                        {
+                            i += item.postcount;
+                        }
+                        yrulvalues.Add(i);
+                    }
+                }
+                chartData.Add(new
+                {
+                    Legend = p,
+                    Xcounts = xRulevalues,
+                    Ycounts = yrulvalues
+                });
+
+            }
+
+            if (risklst.Count > 0)
+            {
+                image = Image.GetInstance(Chart("Overall Rule score %", chartData, SeriesChartType.StackedBar));
+                image.Alignment = 1;
+                image.ScalePercent(75f);
+                doc.Add(image);
+            }
 
             ////
             #region ToDos Table
@@ -268,7 +518,7 @@ namespace MaFoi.Charts.Controllers
             doc.Add(new Paragraph(" "));
             float[] tableWidths = new float[] { 40f, 150f, 150f, 90f, 70f, 70f, 60f, 60f, 60f, 60f, 60f };
             PdfPTable table = new PdfPTable(tableWidths);
-            table.SpacingBefore = 10f;
+            table.SpacingBefore = 60f;
 
             foreach (string header in columnHeaders)
             {
@@ -292,6 +542,7 @@ namespace MaFoi.Charts.Controllers
             int serialNo = 0;
             foreach (var todo in reportData.ToDoList)
             {
+
                 PdfPCell cCell = new PdfPCell(new Phrase((serialNo + 1).ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                 table.AddCell(cCell);
                 cCell = new PdfPCell(new Phrase(todo.Act.Name.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
@@ -302,7 +553,7 @@ namespace MaFoi.Charts.Controllers
                 table.AddCell(cCell);
                 cCell = new PdfPCell(new Phrase(todo.DueDate.ToString("d"), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                 table.AddCell(cCell);
-                cCell = new PdfPCell(new Phrase(todo.SubmittedDate.ToString("d"), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                cCell = new PdfPCell(new Phrase(todo.Auditted == "Audit" ? todo.SubmittedDate.ToString("d") : todo.AuditedDate.ToString("d"), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                 table.AddCell(cCell);
                 cCell = new PdfPCell(new Phrase(todo.Status, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                 table.AddCell(cCell);
@@ -477,6 +728,7 @@ namespace MaFoi.Charts.Controllers
             doc.Close();
 
             return File(pdf, "application/pdf", "Chart.pdf");
+
         }
 
         public async Task<AuditReportData> GetDataForChart(ToDoFilterCriteria criteria)
@@ -488,12 +740,19 @@ namespace MaFoi.Charts.Controllers
                 var request = new HttpRequestMessage() { RequestUri = new Uri(Baseurl) };
                 var payload = new ToDoFilterCriteria()
                 {
-                    Company = new Guid("310e6064-510f-4736-acd5-ed82eaca4765"),
-                    AssociateCompany = new Guid("dc93767a-337d-4049-a3ca-21cc0b544afa"),
-                    Location = new Guid("fd2494e1-99ce-48e7-a27c-625c800c3260"),
-                    Month = "April",
-                    Year = 2023,
-                    Statuses = new string[] { "" }
+                    Company = criteria.Company,
+                    AssociateCompany = criteria.AssociateCompany,
+                    Location = criteria.Location,
+                    Month = criteria.Month,
+                    Year = criteria.Year,
+                    Statuses = criteria.Statuses
+
+                    //Company = new Guid("310e6064-510f-4736-acd5-ed82eaca4765"),
+                    //AssociateCompany = new Guid("dc93767a-337d-4049-a3ca-21cc0b544afa"),
+                    //Location = new Guid("fd2494e1-99ce-48e7-a27c-625c800c3260"),
+                    //Month = "April",
+                    //Year = 2023,
+                    //Statuses = new string[] { "" }
                     //AuditorId = new Guid("a95d7a63-1d19-48c2-8b74-4a28204f15c2")
                 };
                 request.Method = HttpMethod.Post;
@@ -527,6 +786,29 @@ namespace MaFoi.Charts.Controllers
             }
         }
 
+        public Color GetColor1(string legend)
+        {
+            Color legendColor = Color.White;
+            switch (legend)
+            {
+                case "Audited":
+                    legendColor = Color.Green;
+                    break;
+                case "Non-Compliance":
+                    legendColor = Color.Gray;
+                    break;
+                case "Rejected":
+                    legendColor = Color.Red;
+                    break;
+                case "Compliant":
+                    legendColor = Color.ForestGreen;
+                    break;
+                case "Not-Applicable":
+                    legendColor = Color.Orange;
+                    break;
+            }
+            return legendColor;
+        }
         public BaseColor GetColor(string legend)
         {
             BaseColor legendColor = BaseColor.BLACK;
