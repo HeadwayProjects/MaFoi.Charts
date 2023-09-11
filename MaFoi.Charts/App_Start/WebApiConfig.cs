@@ -1,7 +1,9 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http;
+using System.Web.Http.Cors;
 
 namespace MaFoi.Charts
 {
@@ -19,6 +21,9 @@ namespace MaFoi.Charts
                 routeTemplate: "api/{controller}/{id}",
                 defaults: new { id = RouteParameter.Optional }
             );
+
+            EnableCorsAttribute cors = new EnableCorsAttribute(origins:"*",headers:"*",methods:"*");
+            config.EnableCors(cors);
         }
     }
 }
