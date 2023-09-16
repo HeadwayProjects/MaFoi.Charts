@@ -5,6 +5,7 @@ using Microsoft.Ajax.Utilities;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -17,7 +18,8 @@ using Color = System.Drawing.Color;
 using Font = System.Drawing.Font;
 namespace MaFoi.Charts.Controllers
 {
-    [System.Web.Http.Cors.EnableCors(origins: "*", headers: "*", methods: "*", exposedHeaders: "X-My-Header")]
+
+    [AllowCrossSite]
     public class AuditController : Controller
     {
         // GET: Audit
@@ -40,11 +42,11 @@ namespace MaFoi.Charts.Controllers
 
         private Byte[] Chart(string chartTitle, List<dynamic> chartData, SeriesChartType chartType)
         {
-            if (SeriesChartType.Pie.Equals(chartType))
+            if (SeriesChartType.Pie.Equals(chartType)  || SeriesChartType.Doughnut.Equals(chartType))
                 chartData = chartData.FindAll(x => x.Count > 0);
             else
             {
-                if (chartTitle.Equals("Overall Rule score %"))
+                if (chartTitle.Equals("5.Overall Rule Score %"))
                     chartData = chartData.FindAll(x => x.Ycounts[0] > 0);
                 else
                     chartData = chartData.FindAll(x => x.Ycounts[0] > 0 || x.Ycounts[1] > 0);
@@ -53,22 +55,23 @@ namespace MaFoi.Charts.Controllers
 
             var chart = new Chart
             {
-                Width = 700,
-                Height = 200,
+                Width = 800,
+                Height = 300,
                 RenderType = RenderType.ImageTag,
                 AntiAliasing = AntiAliasingStyles.All,
                 TextAntiAliasingQuality = TextAntiAliasingQuality.High,
             };
 
             chart.Titles.Add(chartTitle);
-            chart.Titles[0].Font = new Font("Arial", 14f, System.Drawing.FontStyle.Bold);
+            chart.Titles[0].Alignment = System.Drawing.ContentAlignment.MiddleLeft;
+            chart.Titles[0].Font = new Font("Arial", 14f, System.Drawing.FontStyle.Bold | System.Drawing.FontStyle.Underline);
 
             chart.ChartAreas.Add("");
             chart.ChartAreas[0].AxisY.Title = "";
             chart.ChartAreas[0].AxisX.Title = "";
             chart.ChartAreas[0].AxisY.TitleFont = new Font("Arial", 6f);
             chart.ChartAreas[0].AxisX.TitleFont = new Font("Arial", 6f);
-            chart.ChartAreas[0].AxisY.LabelStyle.Font = new Font("Arial", 6f);
+            chart.ChartAreas[0].AxisY.LabelStyle.Font = new Font("Arial", 8f);
             chart.ChartAreas[0].AxisY.LabelStyle.Angle = -90;
             chart.ChartAreas[0].BackColor = Color.White;
             chart.ChartAreas[0].AxisX.MajorGrid.Enabled = false;
@@ -80,7 +83,7 @@ namespace MaFoi.Charts.Controllers
 
             // List<string> GreenColorLegends = new List<string> { "Compliant", "Audited" };
 
-            if (SeriesChartType.Pie.Equals(chartType))
+            if (SeriesChartType.Pie.Equals(chartType) || SeriesChartType.Doughnut.Equals(chartType))
             {
                 chart.Series.Add(new Series("data"));
                 chart.Legends.Add(new Legend("Stores"));
@@ -118,56 +121,7 @@ namespace MaFoi.Charts.Controllers
                     }
                 }
 
-                //foreach (var q in chartData)
-                //{
-                //    chart.Series.Add(new Series(q.Legend));
-                //    switch (q.Legend)
-                //    {
-
-                //        case "Compliant":
-                //            {
-                //                chart.Series[q.Legend].Color = Color.Green;
-                //                chart.Series[q.Legend].Label = q.Count + "(" + q.Percantage + ")";
-                //                chart.Series[q.Legend].Points.DataBind( chartData, q.Legend, Convert.ToDouble(q.Count),q.Percantage);
-
-                //                //chart.Series[0].XValueMember=q.Legend;
-                //                //chart.Series[0].Points.Add(Convert.ToDouble(q.Count));
-                //                break;
-                //            }
-                //        case "Non-Compliance":
-                //            {
-                //                chart.Series[q.Legend].Color = Color.Yellow;
-                //                chart.Series[q.Legend].Label = q.Count + "(" + q.Percantage + ")";
-                //                chart.Series[q.Legend].Points.DataBind(chartData, q.Legend, Convert.ToDouble(q.Count), q.Percantage);
-
-                //                //chart.Series[0].LabelToolTip = q.Legend;
-                //                //chart.Series[0].Points.Add(Convert.ToDouble(q.Count));
-                //                break;
-                //            }
-                //        case "Not-Applicable":
-                //            {
-                //                chart.Series[q.Legend].Color = Color.Gray;
-                //                chart.Series[q.Legend].Label = q.Count + "(" + q.Percantage + ")";
-                //                chart.Series[q.Legend].Points.DataBind(chartData, q.Legend, Convert.ToDouble(q.Count), q.Percantage);
-
-                //                //chart.Series[0].LabelToolTip = q.Legend;
-                //                //chart.Series[0].Points.AddY(Convert.ToDouble(q.Count));
-                //                break;
-                //            }
-                //        case "Rejected":
-                //            {
-                //                chart.Series[q.Legend].Color = Color.Red;
-                //                chart.Series[q.Legend].Label = q.Count + "(" + q.Percantage + ")";
-                //                chart.Series[q.Legend].Points.DataBind(chartData, q.Legend, Convert.ToDouble(q.Count), q.Percantage);
-
-                //                //chart.Series[0].LabelToolTip = q.Legend;
-                //                //chart.Series[0].Points.AddY(Convert.ToDouble(q.Count));
-                //                break;
-                //            }
-                //    }
-                //    //chart.Series[0].Color = GreenColorLegends.Contains(q.Legend) ? Color.Green : Color.Red;
-                //    //chart.Series[0].Points.AddXY(q.Legend, Convert.ToDouble(q.Count));
-                //}
+                
             }
             else
             {
@@ -175,20 +129,24 @@ namespace MaFoi.Charts.Controllers
                 chart.Legends.Add(new Legend("Stores"));
                 if (chartData.Count > 0)
                 {
+                    chart.Width = 800;
+                    chart.Height = 500;
+                    
+
                     foreach (var q in chartData)
                     {
                         chart.Series.Add(new Series(q.Legend));
 
                         chart.Series[q.Legend].IsValueShownAsLabel = true;
-                        chart.Series[q.Legend].ChartType = SeriesChartType.StackedBar;
+                        chart.Series[q.Legend].ChartType = SeriesChartType.Bar;
                         chart.Series[q.Legend].LabelToolTip = q.Legend.ToString();
                         // chart.Series[p].Label = p.ToString();                   
                         chart.Series[q.Legend].Label = "(" + "#VALY" + ") " + "#PERCENT{P0}";
-                        chart.Series[q.Legend].LabelAngle = 45;
+                        //chart.Series[q.Legend].LabelAngle = 45;
                         chart.Series[q.Legend].Color = GetColor1(q.Legend.ToString());
                         chart.Series[q.Legend].Points.DataBindXY(q.Xcounts, q.Ycounts);
 
-                        chart.Series[q.Legend]["PieLabelStyle"] = "inside";
+                         chart.Series[q.Legend]["PieLabelStyle"] = "inside";
                         chart.Series[q.Legend].Legend = "Stores";
                         chart.Series[q.Legend].LegendText = q.Legend.ToString();
 
@@ -217,12 +175,14 @@ namespace MaFoi.Charts.Controllers
         [Route("GetAuditReport")]
         public async Task<FilePathResult> GetAuditReport(ToDoFilterCriteria criteria)
         {
-            var doc = new Document(PageSize.LETTER, 2f, 2f, 2f, 2f);
+                var doc = new Document(PageSize.LETTER, 2f, 2f, 2f, 2f);
             var pdf = Server.MapPath("Chart") + "/Chart" + Guid.NewGuid() + ".pdf";
             string imagepath = Server.MapPath("Images") + "\\logo.jpg";
             //if (System.IO.File.Exists(pdf))
             //    System.IO.File.Delete(pdf);
             PdfWriter pdfwriter = PdfWriter.GetInstance(doc, new System.IO.FileStream(pdf, System.IO.FileMode.Create));
+            pdfwriter.PageEvent = new PageNumberEventHandler();
+
             doc.Open();
 
             doc.Add(new Paragraph(" "));
@@ -238,11 +198,44 @@ namespace MaFoi.Charts.Controllers
 
             List<InternalCompliancesMapping> internalCompliances = new List<InternalCompliancesMapping>();
 
-
+            List<InternalCompliancesMapping> NoAuditinternalCompliances = new List<InternalCompliancesMapping>();
             foreach (var todo in reportData.ToDoList)
             {
+                if(todo.ToDo.Auditted== "No Audit")
+                {
+                    InternalCompliancesMapping mapping1 = new InternalCompliancesMapping();
+                    mapping1.InternalCompliance = todo.ToDo.Act.Name;
+                    internalCompliances.Add(mapping1);
+                    InternalCompliancesMapping mapping = new InternalCompliancesMapping();
+                    mapping.InternalCompliance = todo.ToDo.Rule.Name;
+                    mapping.Risk = todo.RuleComplianceDetails.Risk;
+                    mapping.Status = todo.ToDo.AuditStatus;
+                    mapping.Auditstatus = todo.ToDo.Auditted == "No Audit" ? "No" : "Yes";
+                    mapping.Nature = todo.ToDo.Activity.Type;
+                    mapping.AuditType = todo.ToDo.Auditted.ToString();
+                    string Impriosonment = todo.RuleComplianceDetails.Impriosonment == true ? "Imprisonment" : "";
+                    string ContinuingPenalty = todo.RuleComplianceDetails.ContinuingPenalty == true ? "ContinuingPenalty" : "";
+                    string CancellationSuspensionOfLicense = todo.RuleComplianceDetails.CancellationSuspensionOfLicense == true ? "CancellationSuspensionOfLicense" : "";
 
-                if (todo.ToDo.AuditStatus != "Complaint")
+                    Dictionary<string, string> myDictionary = new Dictionary<string, string>
+                            {
+            {"Complaince Description", todo.RuleComplianceDetails.ComplianceDescription },
+                        { "Risk:" ,todo.RuleComplianceDetails.Risk },
+                         {"AuditType" , todo.RuleComplianceDetails.AuditType },
+                        {"StatutoryAuthority" ,todo.RuleComplianceDetails.StatutoryAuthority },
+                        {"Proof of Complaince:" , todo.RuleComplianceDetails.ProofOfCompliance },
+                        { "Penalty" , todo.RuleComplianceDetails.Penalty },
+                        {"MaximumPenalityAmount" ,todo.RuleComplianceDetails.MaximumPenaltyAmount.ToString() },
+                     { "CheckboxValues" , todo.RuleComplianceDetails.ComplianceName + "," + Impriosonment + "," + ContinuingPenalty + "," + CancellationSuspensionOfLicense }
+
+        };
+                    mapping.ImpectDetails = myDictionary;
+
+
+                    NoAuditinternalCompliances.Add(mapping);
+                }
+
+                else if ((todo.ToDo.AuditStatus == "Non-Compliance" || todo.ToDo.Status == "Rejected") && todo.ToDo.Auditted!= "No Audit")
                 {
 
                     InternalCompliancesMapping mapping1 = new InternalCompliancesMapping();
@@ -251,10 +244,29 @@ namespace MaFoi.Charts.Controllers
                     InternalCompliancesMapping mapping = new InternalCompliancesMapping();
                     mapping.InternalCompliance = todo.ToDo.Rule.Name;
                     mapping.Risk = todo.RuleComplianceDetails.Risk;
-                    mapping.Status = todo.ToDo.Status;
+                    mapping.Status = todo.ToDo.AuditStatus;
                     mapping.Auditstatus = todo.ToDo.Auditted == "No Audit" ? "No" : "Yes";
                     mapping.Nature = todo.ToDo.Activity.Type;
-                    mapping.Critical = "No";
+                    mapping.AuditType = todo.ToDo.Auditted.ToString();
+                    string Impriosonment = todo.RuleComplianceDetails.Impriosonment== true ? "Imprisonment" : "";
+                    string ContinuingPenalty = todo.RuleComplianceDetails.ContinuingPenalty == true ? "ContinuingPenalty" : "";
+                    string CancellationSuspensionOfLicense = todo.RuleComplianceDetails.CancellationSuspensionOfLicense == true ? "CancellationSuspensionOfLicense" : "";
+
+                    Dictionary<string, string> myDictionary = new Dictionary<string, string>
+                            {
+            {"Complaince Description", todo.RuleComplianceDetails.ComplianceDescription },
+                        { "Risk:" ,todo.RuleComplianceDetails.Risk },
+                         {"AuditType" , todo.RuleComplianceDetails.AuditType },
+                        {"StatutoryAuthority" ,todo.RuleComplianceDetails.StatutoryAuthority },
+                        {"Proof of Complaince:" , todo.RuleComplianceDetails.ProofOfCompliance },
+                        { "Penalty" , todo.RuleComplianceDetails.Penalty },
+                        {"MaximumPenalityAmount" ,todo.RuleComplianceDetails.MaximumPenaltyAmount.ToString() },
+                     { "CheckboxValues" , todo.RuleComplianceDetails.ComplianceName + "," + Impriosonment + "," + ContinuingPenalty + "," + CancellationSuspensionOfLicense }
+
+        };
+                    mapping.ImpectDetails = myDictionary;
+
+
                     internalCompliances.Add(mapping);
                 }
 
@@ -269,7 +281,7 @@ namespace MaFoi.Charts.Controllers
             tblTopSummary.SpacingBefore = 10f;
             tblTopSummary.SpacingAfter = 10f;
 
-            var reportHeading = String.Format("Audit Report for {0}, {1}", reportData.AuditReportSummary.Month, reportData.AuditReportSummary.Year);
+            var reportHeading = String.Format("Vendor Audit Report for {0}, {1}", reportData.AuditReportSummary.Month, reportData.AuditReportSummary.Year);
 
             PdfPCell cellHeading = new PdfPCell(new Phrase(reportHeading, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 16f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
             cellHeading.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
@@ -295,7 +307,7 @@ namespace MaFoi.Charts.Controllers
             tblLeftSummary.SpacingBefore = 20f;
             tblLeftSummary.SpacingAfter = 10f;
 
-            PdfPCell cellLeftSummaryHeading = new PdfPCell(new Phrase("Audit Submitted To", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
+            PdfPCell cellLeftSummaryHeading = new PdfPCell(new Phrase("1.Audit Submitted To", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 16f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
             cellLeftSummaryHeading.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
             cellLeftSummaryHeading.PaddingBottom = 4f;
             cellLeftSummaryHeading.HorizontalAlignment = 1;
@@ -306,14 +318,14 @@ namespace MaFoi.Charts.Controllers
 
             foreach (var kvp in leftSummaryData)
             {
-                PdfPCell cellLeftSummaryContent = new PdfPCell(new Phrase(kvp.Key, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
+                PdfPCell cellLeftSummaryContent = new PdfPCell(new Phrase(kvp.Key, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 10f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
                 cellLeftSummaryContent.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
                 cellLeftSummaryContent.HorizontalAlignment = 0;
                 cellLeftSummaryContent.VerticalAlignment = 1;
                 cellLeftSummaryContent.Border = 0;
                 tblLeftSummary.AddCell(cellLeftSummaryContent);
 
-                PdfPCell cellLeftSummaryContent1 = new PdfPCell(new Phrase(kvp.Value, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                PdfPCell cellLeftSummaryContent1 = new PdfPCell(new Phrase(kvp.Value, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 10f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                 cellLeftSummaryContent1.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
                 cellLeftSummaryContent1.HorizontalAlignment = 0;
                 cellLeftSummaryContent1.VerticalAlignment = 1;
@@ -336,33 +348,33 @@ namespace MaFoi.Charts.Controllers
 
             PdfPTable tblRightSummary = new PdfPTable(tblRightSummaryWidths);
             tblRightSummary.SpacingBefore = 20f;
-            tblRightSummary.SpacingAfter = 10f;
+            tblRightSummary.SpacingAfter = 5f;
 
-            PdfPCell cellRightSummaryHeading = new PdfPCell(new Phrase("Audit Summary", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
+            PdfPCell cellRightSummaryHeading = new PdfPCell(new Phrase("2.Audit Summary", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 16f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
             cellRightSummaryHeading.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
             cellRightSummaryHeading.HorizontalAlignment = 1;
             cellRightSummaryHeading.VerticalAlignment = 1;
             cellRightSummaryHeading.Colspan = 2;
             cellRightSummaryHeading.Border = 0;
-            cellRightSummaryHeading.PaddingBottom = 4f;
+            cellRightSummaryHeading.PaddingBottom = 10f;
             tblRightSummary.AddCell(cellRightSummaryHeading);
 
             foreach (var kvp in RightSummaryData)
             {
-                PdfPCell cellRightSummaryContent = new PdfPCell(new Phrase(kvp.Key, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
+                PdfPCell cellRightSummaryContent = new PdfPCell(new Phrase(kvp.Key, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 10f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
                 cellRightSummaryContent.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
                 cellRightSummaryContent.HorizontalAlignment = 0;
                 cellRightSummaryContent.VerticalAlignment = 1;
                 cellRightSummaryContent.Border = 0;
-                cellRightSummaryContent.BackgroundColor = GetColor(kvp.Key);
+                //cellRightSummaryContent.BackgroundColor = GetColor(kvp.Key);
                 tblRightSummary.AddCell(cellRightSummaryContent);
 
-                PdfPCell cellRightSummaryContent1 = new PdfPCell(new Phrase(kvp.Value, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                PdfPCell cellRightSummaryContent1 = new PdfPCell(new Phrase(kvp.Value, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 10f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                 cellRightSummaryContent1.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
                 cellRightSummaryContent1.HorizontalAlignment = 0;
                 cellRightSummaryContent1.VerticalAlignment = 1;
                 cellRightSummaryContent1.Border = 0;
-                cellRightSummaryContent1.BackgroundColor = GetColor(kvp.Key);
+                //cellRightSummaryContent1.BackgroundColor = GetColor(kvp.Key);
                 tblRightSummary.AddCell(cellRightSummaryContent1);
             }
 
@@ -382,7 +394,7 @@ namespace MaFoi.Charts.Controllers
             tblChartAndSummary.AddCell(cellRightSummary);
 
             doc.Add(tblChartAndSummary);
-
+            
             var chartData = new List<dynamic>();
 
             //chartData.Add(new
@@ -400,6 +412,9 @@ namespace MaFoi.Charts.Controllers
             int nonapplicablecount = reportData.ToDoList.Count(l => l.ToDo.AuditStatus == "Not-Applicable");
             int rejectcount = reportData.ToDoList.Count(l => l.ToDo.Status == "Rejected");
             int total = compliantcount + noncompliantcount + nonapplicablecount + rejectcount;
+
+
+
             chartData.Add(new
             {
                 Legend = "Compliant",
@@ -428,12 +443,154 @@ namespace MaFoi.Charts.Controllers
             });
 
 
-            var image = Image.GetInstance(Chart("Overall Compliance score %", chartData, SeriesChartType.Pie));
+            var image = Image.GetInstance(Chart("3.Overall Compliance Score %", chartData, SeriesChartType.Pie));
             image.Alignment = 1;
             image.ScalePercent(75f);
             doc.Add(image);
+            doc.Add(new Paragraph(""));
+            doc.Add(new Paragraph(" "));
+            //Audited type  status -audit
+            PdfPTable typeimages = new PdfPTable(3);
+            typeimages.DefaultCell.BorderWidth = 0;
+            PdfPCell auidtcell = new PdfPCell();
+            PdfPCell physicalcell = new PdfPCell();
+            PdfPCell noauditcell = new PdfPCell();
+            int auditcompliantcount = reportData.ToDoList.Count(l => l.ToDo.Auditted=="Audit" && l.ToDo.AuditStatus == "Compliant");
+            int auditnoncompliantcount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "Audit" && l.ToDo.AuditStatus == "Non-Compliance");
+            int auditnonapplicablecount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "Audit" && l.ToDo.AuditStatus == "Not-Applicable");
+            int auditrejectcount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "Audit" && l.ToDo.Status == "Rejected");
+            int audittotal = auditcompliantcount + auditnoncompliantcount + auditnonapplicablecount + auditrejectcount;
+            var auditchartdata =new List<dynamic>();
+            auditchartdata.Add(new
+            {
+                Legend = "Compliant",
+                Percantage = ((auditcompliantcount * 100) / audittotal).ToString() + "%",
+                Count = auditcompliantcount
+
+            });
+            auditchartdata.Add(new
+            {
+                Legend = "Non-Compliance",
+                Percantage = ((auditnoncompliantcount * 100) / audittotal).ToString() + "%",
+                Count = auditnonapplicablecount
+
+            });
+            auditchartdata.Add(new
+            {
+                Legend = "Not-Applicable",
+                Percantage = ((auditnonapplicablecount * 100) / audittotal).ToString() + "%",
+                Count = auditnonapplicablecount
+            });
+            auditchartdata.Add(new
+            {
+                Legend = "Rejected",
+                Percantage = ((auditrejectcount * 100) / audittotal).ToString() + "%",
+                Count =auditrejectcount
+            });
 
 
+            var auditimage = Image.GetInstance(Chart("Audit Type:Audit %", auditchartdata, SeriesChartType.Doughnut));
+            auditimage.Alignment = 1;
+            auditimage.ScalePercent(30f);
+            //doc.Add(auditimage);
+            auidtcell.AddElement(auditimage);
+            auidtcell.BorderWidth = 0;
+           // cell1.Width = 30f;
+           // cell1.Colspan = 1;
+            //Audited type  status -physical audit
+
+            int Physicalauditcompliantcount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "Physical Audit" && l.ToDo.AuditStatus == "Compliant");
+            int physicalauditnoncompliantcount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "Physical Audit" && l.ToDo.AuditStatus == "Non-Compliance");
+            int physicalauditnonapplicablecount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "Physical Audit" && l.ToDo.AuditStatus == "Not-Applicable");
+            int physicalauditrejectcount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "Physical Audit" && l.ToDo.Status == "Rejected");
+            int physicalaudittotal = Physicalauditcompliantcount + physicalauditnoncompliantcount + physicalauditnonapplicablecount + physicalauditrejectcount;
+            var physicalauditchartdata = new List<dynamic>();
+            physicalauditchartdata.Add(new
+            {
+                Legend = "Compliant",
+                Percantage = ((Physicalauditcompliantcount * 100) / physicalaudittotal).ToString() + "%",
+                Count = Physicalauditcompliantcount
+
+            });
+            physicalauditchartdata.Add(new
+            {
+                Legend = "Non-Compliance",
+                Percantage = ((physicalauditnoncompliantcount * 100) / physicalaudittotal).ToString() + "%",
+                Count = physicalauditnoncompliantcount
+
+            });
+            physicalauditchartdata.Add(new
+            {
+                Legend = "Not-Applicable",
+                Percantage = ((physicalauditnonapplicablecount * 100) / physicalaudittotal).ToString() + "%",
+                Count = physicalauditnonapplicablecount
+            });
+            physicalauditchartdata.Add(new
+            {
+                Legend = "Rejected",
+                Percantage = ((physicalauditrejectcount * 100) / physicalaudittotal).ToString() + "%",
+                Count = physicalauditrejectcount
+            });
+
+
+            var physicalauditimage = Image.GetInstance(Chart("Audit Type:Physical Audit", physicalauditchartdata, SeriesChartType.Doughnut));
+            physicalauditimage.Alignment = 1;
+            physicalauditimage.ScalePercent(30f);
+            // doc.Add(physicalauditimage);
+            physicalcell.AddElement(physicalauditimage);
+            physicalcell.BorderWidth = 0;
+           // cell2.Width = 30f;
+          //  cell2.Colspan = 1;
+            //
+            //Audited type  status -No audit
+
+            int Noauditcompliantcount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "No Audit" && l.ToDo.AuditStatus == "Compliant");
+            int Noauditnoncompliantcount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "No Audit" && l.ToDo.AuditStatus == "Non-Compliance");
+            int Noauditnonapplicablecount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "No Audit" && l.ToDo.AuditStatus == "Not-Applicable");
+            int Noauditrejectcount = reportData.ToDoList.Count(l => l.ToDo.Auditted == "No Audit" && l.ToDo.Status == "Rejected");
+            int Noaudittotal = Noauditcompliantcount + Noauditnoncompliantcount + Noauditnonapplicablecount + auditrejectcount;
+            var Noauditchartdata = new List<dynamic>();
+            Noauditchartdata.Add(new
+            {
+                Legend = "Compliant",
+                Percantage = ((Noauditcompliantcount * 100) / Noaudittotal).ToString() + "%",
+                Count = Noauditcompliantcount
+
+            });
+            Noauditchartdata.Add(new
+            {
+                Legend = "Non-Compliance",
+                Percantage = ((Noauditnoncompliantcount * 100) / Noaudittotal).ToString() + "%",
+                Count = Noauditnoncompliantcount
+
+            });
+            Noauditchartdata.Add(new
+            {
+                Legend = "Not-Applicable",
+                Percantage = ((Noauditnonapplicablecount * 100) / Noaudittotal).ToString() + "%",
+                Count = Noauditnonapplicablecount
+            });
+            Noauditchartdata.Add(new
+            {
+                Legend = "Rejected",
+                Percantage = ((auditrejectcount * 100) / Noaudittotal).ToString() + "%",
+                Count = auditrejectcount
+            });
+
+
+            var Noauditimage = Image.GetInstance(Chart("Audit Type:No Audit", Noauditchartdata, SeriesChartType.Doughnut));
+            Noauditimage.Alignment = 1;
+            Noauditimage.ScalePercent(30f);
+            //doc.Add(Noauditimage);
+            noauditcell .AddElement(Noauditimage);
+            noauditcell.BorderWidth = 0;
+           
+            typeimages.AddCell(noauditcell);
+            typeimages.AddCell(physicalcell);
+            typeimages.AddCell(noauditcell);
+            
+
+            doc.Add(typeimages);
             //activity bar chart
             chartData = new List<dynamic>();
             string[] typelst = reportData.ToDoList.Select(t => t.ToDo.Activity.Type).Distinct().ToArray();
@@ -464,18 +621,9 @@ namespace MaFoi.Charts.Controllers
             }
 
 
-            //chartData.Add(new
-            //{
-            //    Legend = "Compliant",
-            //    Count = reportData.ToDoList.Count(l => l.AuditStatus == "Compliant")
-            //});
-            //chartData.Add(new
-            //{
-            //    Legend = "Non Compliant",
-            //    Count = reportData.ToDoList.Count(l => l.AuditStatus != "Compliant")
-            //});
+            
 
-            image = Image.GetInstance(Chart("Overall Activity score %", chartData, SeriesChartType.StackedBar));
+            image = Image.GetInstance(Chart("4.Overall Activity Score %", chartData, SeriesChartType.Bar));
             image.Alignment = 1;
             image.ScalePercent(75f);
             doc.Add(image);
@@ -536,42 +684,52 @@ namespace MaFoi.Charts.Controllers
 
             if (risklst.Count > 0)
             {
-                image = Image.GetInstance(Chart("Overall Rule score %", chartData, SeriesChartType.StackedBar));
+                doc.NewPage();
+
+                image = Image.GetInstance(Chart("5.Overall Rule Score %", chartData, SeriesChartType.Bar));
                 image.Alignment = 1;
                 image.ScalePercent(75f);
                 doc.Add(image);
             }
+
+            
             doc.SetPageSize(iTextSharp.text.PageSize.A4.Rotate());
             ////
             #region ToDos Table
 
             var columnHeaders = new string[] {"S.No", "Act",
             "Rule",
-            "Forms / Registers & Returns",
+            "Activities",
             "Audit Due Date",
             "Vendor Submitted Date",
-            "Status",
             "Compliant",
             "NonCompliance",
             "Not Applicable",
+            "Audit Type",
+            "Status",
+
             "Remarks, if any" };
 
-            doc.Add(new Paragraph(" "));
-            doc.Add(new Paragraph(" "));
+          
             PdfPTable tblAuditSummary = new PdfPTable(1);
             tblAuditSummary.SpacingBefore = 60f;
             tblAuditSummary.SpacingAfter = 10f;
 
-            PdfPCell cellaudit = new PdfPCell(new Phrase("Compliance Audit Report", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 16f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
+            PdfPCell cellaudit = new PdfPCell(new Phrase("6.Compliance Audit Report", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 16f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
             cellaudit.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
             cellaudit.HorizontalAlignment = 1;
             cellaudit.VerticalAlignment = 1;
             cellaudit.Border = 0;
             tblAuditSummary.AddCell(cellaudit);
+
+            doc.NewPage();
+            doc.Add(new Paragraph(" "));
+            
+
             doc.SetPageSize(iTextSharp.text.PageSize.A4.Rotate());
             doc.Add(tblAuditSummary);
 
-            float[] tableWidths = new float[] { 40f, 150f, 150f, 150f, 70f, 70f, 60f, 70f, 80f, 70f, 120f };
+            float[] tableWidths = new float[] { 50f, 200f, 200f, 150f, 100f, 100f, 100f, 100f, 100f,100f,100f, 120f };
             PdfPTable table = new PdfPTable(tableWidths);
             table.SpacingBefore = 10f;
             //table.WidthPercentage = 100; //table width to 100per
@@ -611,13 +769,16 @@ namespace MaFoi.Charts.Controllers
                 table.AddCell(cCell);
                 cCell = new PdfPCell(new Phrase(todo.ToDo.Auditted == "No Audit" ? "NA" : todo.ToDo.AuditedDate.ToString("d"), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                 table.AddCell(cCell);
+              
+                cCell = new PdfPCell(new Phrase((todo.ToDo.AuditStatus == "Compliant" ? "Yes" : ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                table.AddCell(cCell);
+                cCell = new PdfPCell(new Phrase((todo.ToDo.AuditStatus == "Non-Compliance" ? "Yes" : ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                table.AddCell(cCell);
+                cCell = new PdfPCell(new Phrase((todo.ToDo.AuditStatus == "Not-Applicable" ? "Yes" : ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                table.AddCell(cCell);
+                cCell = new PdfPCell(new Phrase(todo.ToDo.Auditted, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                table.AddCell(cCell);
                 cCell = new PdfPCell(new Phrase(todo.ToDo.Status, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
-                table.AddCell(cCell);
-                cCell = new PdfPCell(new Phrase((todo.ToDo.AuditStatus == "Compliant" ? "Y" : ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
-                table.AddCell(cCell);
-                cCell = new PdfPCell(new Phrase((todo.ToDo.AuditStatus == "Non-Compliance" ? "Y" : ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
-                table.AddCell(cCell);
-                cCell = new PdfPCell(new Phrase((todo.ToDo.AuditStatus == "Not-Applicable" ? "Y" : ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                 table.AddCell(cCell);
                 cCell = new PdfPCell(new Phrase((!string.IsNullOrEmpty(todo.ToDo.AuditRemarks) ? todo.ToDo.AuditRemarks : ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                 table.AddCell(cCell);
@@ -628,16 +789,17 @@ namespace MaFoi.Charts.Controllers
             //table.AddCell("<b>Thank you for visiting</b>");
             //return resultHtml;
 
-            doc.SetPageSize(iTextSharp.text.PageSize.A4.Rotate());
+            doc.SetPageSize(iTextSharp.text.PageSize.A4.Rotate());         
             doc.Add(table);
+
             #endregion ToDos Table
 
             #region Observations / Recommendations Table
 
+            doc.NewPage();
             doc.Add(new Paragraph(" "));
-            doc.Add(new Paragraph(" "));
-
-            PdfPTable tblRecommendations = new PdfPTable(2);
+           
+            PdfPTable tblRecommendations = new PdfPTable(1);
             tblRecommendations.SpacingBefore = 10f;
 
 
@@ -646,23 +808,17 @@ namespace MaFoi.Charts.Controllers
             cell1.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
             cell1.HorizontalAlignment = 1;
             cell1.VerticalAlignment = 1;
-            cell1.Colspan = 2;
+           
             tblRecommendations.AddCell(cell1);
 
-            PdfPCell cell2 = new PdfPCell(new Phrase("Auditor Observation", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
-            cell2.BackgroundColor = new iTextSharp.text.BaseColor(Color.LightGreen);
-            cell2.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
-            cell2.HorizontalAlignment = 1;
-            cell2.VerticalAlignment = 1;
-            cell2.Colspan = 1;
-            tblRecommendations.AddCell(cell2);
+      
 
             PdfPCell cell3 = new PdfPCell(new Phrase("Auditor Recommendation", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
             cell3.BackgroundColor = new iTextSharp.text.BaseColor(Color.LightGreen);
             cell3.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
             cell3.HorizontalAlignment = 1;
             cell3.VerticalAlignment = 1;
-            cell3.Colspan = 1;
+            
             tblRecommendations.AddCell(cell3);
 
             ////
@@ -677,16 +833,15 @@ namespace MaFoi.Charts.Controllers
             }
             observationsString = Regex.Replace(observationsString, "<.*?>", string.Empty);
             ///
-            PdfPCell cellObservations = new PdfPCell(new Phrase(observationsString, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
-            cellObservations.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
-            cellObservations.HorizontalAlignment = 0;
-            cellObservations.Colspan = 1;
-            tblRecommendations.AddCell(cellObservations);
+            //PdfPCell cellObservations = new PdfPCell(new Phrase(observationsString, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+            //cellObservations.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
+            //cellObservations.HorizontalAlignment = 0;
+            //cellObservations.Colspan = 1;
+            //tblRecommendations.AddCell(cellObservations);
 
             PdfPCell cellRecommendations = new PdfPCell(new Phrase(recommendationsString, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
             cellRecommendations.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
             cellRecommendations.HorizontalAlignment = 0;
-            cellRecommendations.Colspan = 1;
             tblRecommendations.AddCell(cellRecommendations);
             doc.SetPageSize(iTextSharp.text.PageSize.A4.Rotate());
             doc.Add(tblRecommendations);
@@ -696,25 +851,29 @@ namespace MaFoi.Charts.Controllers
 
             #region List Of Internal Compliances Table
 
-            var internalHeaders = new string[] {"Internal Compliance", "Critical",
+            var internalHeaders = new string[] {"Internal Compliance", "Impact Details", "Audit Type",
             "Risk",
             "Nature",
-            "Consider For Score",
-            "Status"
+            "Consider For Score"
+           
+           
              };
-            doc.Add(new Paragraph(" "));
-            doc.Add(new Paragraph(" "));
+            doc.NewPage();
+            doc.Add(new Paragraph(""));
+            PdfPTable tblnoncomp = new PdfPTable(1);
+            tblnoncomp.SpacingBefore = 20f;
+            tblnoncomp.SpacingAfter = 10f;
 
-            float[] internaltableWidths = new float[] { 250f, 70f, 60f, 100f, 100f, 150f };
+            float[] internaltableWidths = new float[] { 250f, 550f, 100f, 100f, 100f,100f };
             PdfPTable internaltable = new PdfPTable(internaltableWidths);
-            internaltable.SpacingBefore = 60f;
-            PdfPCell cellinternal = new PdfPCell(new Phrase("List of Activities", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
-            cellinternal.BackgroundColor = new iTextSharp.text.BaseColor(Color.LightGreen);
+            internaltable.SpacingBefore = 10f;
+            PdfPCell cellinternal = new PdfPCell(new Phrase("7.List of Non-complaince Details and Impact\r\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 16f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
             cellinternal.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
             cellinternal.HorizontalAlignment = 1;
             cellinternal.VerticalAlignment = 1;
-            cellinternal.Colspan = 6;
-            internaltable.AddCell(cellinternal);
+            cellinternal.Border = 0;
+            tblnoncomp.AddCell(cellinternal);
+            doc.Add(tblnoncomp);
             //table.WidthPercentage = 100; //table width to 100per
             //table.SetTotalWidth(new float[] { iTextSharp.text.PageSize.A4.Rotate().Width - 25 });// width of each column
             foreach (string header in internalHeaders)
@@ -739,10 +898,24 @@ namespace MaFoi.Charts.Controllers
                 }
                 else
                 {
+                 
+                    Paragraph cell1Text = new Paragraph();
+                    foreach (var kvp in internalCompliances1.ImpectDetails)
+                    {
+                        cell1Text.Add(new Chunk(kvp.Key.ToString() + ":", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
+                        cell1Text.Add(new Chunk(kvp.Value, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    }
+                    // Create another paragraph for the second cell
+                    Paragraph cell2Text = new Paragraph("Plain Text", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK));
+
+
                     PdfPCell cCell = new PdfPCell(new Phrase(internalCompliances1.InternalCompliance.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     cCell.Colspan = 1;
                     internaltable.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(internalCompliances1.Critical, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell = new PdfPCell(cell1Text);
+                    cCell.Colspan = 1;
+                    internaltable.AddCell(cCell);
+                    cCell = new PdfPCell(new Phrase(internalCompliances1.AuditType, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     cCell.Colspan = 1;
                     internaltable.AddCell(cCell);
                     cCell = new PdfPCell(new Phrase(internalCompliances1.Risk, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
@@ -754,9 +927,8 @@ namespace MaFoi.Charts.Controllers
                     cCell = new PdfPCell(new Phrase(internalCompliances1.Auditstatus, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     cCell.Colspan = 1;
                     internaltable.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(internalCompliances1.Status, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
-                    cCell.Colspan = 1;
-                    internaltable.AddCell(cCell);
+                   
+                    
                 }
 
             }
@@ -764,12 +936,97 @@ namespace MaFoi.Charts.Controllers
             doc.Add(internaltable);
             #endregion List Of Internal Compliances Table
 
+            #region List Of No Audiit Internal Compliances Table
 
+            var NoAuditinternalHeaders = new string[] {"Internal Compliance", "Impact Details", "Audit Type",
+            "Risk",
+            "Nature",
+            "Consider For Score"
+
+
+             };
+            doc.NewPage();
+            doc.Add(new Paragraph(""));
+            PdfPTable tblNoAuditnoncomp = new PdfPTable(1);
+            tblNoAuditnoncomp.SpacingBefore = 20f;
+            tblNoAuditnoncomp.SpacingAfter = 10f;
+
+            float[] NoAuditinternaltableWidths = new float[] { 250f, 550f, 100f, 100f, 100f, 100f };
+            PdfPTable NoAuditinternaltable = new PdfPTable(NoAuditinternaltableWidths);
+            NoAuditinternaltable.SpacingBefore = 10f;
+            PdfPCell NoAuditcellinternal = new PdfPCell(new Phrase("8.List of No Audit Activity Details and Impact\r\n", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 16f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
+            NoAuditcellinternal.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
+            NoAuditcellinternal.HorizontalAlignment = 1;
+            NoAuditcellinternal.VerticalAlignment = 1;
+            NoAuditcellinternal.Border = 0;
+            tblNoAuditnoncomp.AddCell(NoAuditcellinternal);
+            doc.Add(tblNoAuditnoncomp);
+            //table.WidthPercentage = 100; //table width to 100per
+            //table.SetTotalWidth(new float[] { iTextSharp.text.PageSize.A4.Rotate().Width - 25 });// width of each column
+            foreach (string header in NoAuditinternalHeaders)
+            {
+                PdfPCell cell = new PdfPCell(new Phrase(header, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
+                cell.BackgroundColor = new iTextSharp.text.BaseColor(Color.LightBlue);
+                cell.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
+
+                cell.HorizontalAlignment = 1;
+                cell.VerticalAlignment = 1;
+                cell.Colspan = 1;
+                NoAuditinternaltable.AddCell(cell);
+            }
+            foreach (var internalCompliances1 in NoAuditinternalCompliances)
+            {
+                if (string.IsNullOrEmpty(internalCompliances1.Risk))
+                {
+                    PdfPCell cCell1 = new PdfPCell(new Phrase(internalCompliances1.InternalCompliance.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 10f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
+                    cCell1.Colspan = 6;
+                    NoAuditinternaltable.AddCell(cCell1);
+
+                }
+                else
+                {
+
+                    Paragraph cell1Text = new Paragraph();
+                    foreach (var kvp in internalCompliances1.ImpectDetails)
+                    {
+                        cell1Text.Add(new Chunk(kvp.Key.ToString() + ":", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
+                        cell1Text.Add(new Chunk(kvp.Value, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    }
+                    // Create another paragraph for the second cell
+                    Paragraph cell2Text = new Paragraph("Plain Text", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK));
+
+
+                    PdfPCell cCell = new PdfPCell(new Phrase(internalCompliances1.InternalCompliance.ToString(), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell.Colspan = 1;
+                    NoAuditinternaltable.AddCell(cCell);
+                    cCell = new PdfPCell(cell1Text);
+                    cCell.Colspan = 1;
+                    NoAuditinternaltable.AddCell(cCell);
+                    cCell = new PdfPCell(new Phrase(internalCompliances1.AuditType, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell.Colspan = 1;
+                    NoAuditinternaltable.AddCell(cCell);
+                    cCell = new PdfPCell(new Phrase(internalCompliances1.Risk, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell.Colspan = 1;
+                    NoAuditinternaltable.AddCell(cCell);
+                    cCell = new PdfPCell(new Phrase(internalCompliances1.Nature, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell.Colspan = 1;
+                    NoAuditinternaltable.AddCell(cCell);
+                    cCell = new PdfPCell(new Phrase(internalCompliances1.Auditstatus, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell.Colspan = 1;
+                    NoAuditinternaltable.AddCell(cCell);
+
+
+                }
+
+            }
+            // doc.SetPageSize(iTextSharp.text.PageSize.A4.Rotate());
+            doc.Add(NoAuditinternaltable);
+            #endregion List Of Internal Compliances Table
             #region Signature
 
             doc.Add(new Paragraph(" "));
-            doc.Add(new Paragraph(" "));
-            doc.Add(new Paragraph(" "));
+           
+
             doc.Add(new Paragraph(" "));
 
             PdfPTable tblSignature = new PdfPTable(1);
@@ -791,7 +1048,9 @@ namespace MaFoi.Charts.Controllers
             tblSignature.AddCell(cellAuditorName);
 
             doc.Add(tblSignature);
-
+            Paragraph paragraph = new Paragraph(new Chunk("This report is generated by using Ezycomp,No signature required. " + DateTime.Now, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLUE)));
+            paragraph.Alignment = Element.ALIGN_CENTER;
+            doc.Add(paragraph);
             #endregion Signature
 
 
@@ -804,7 +1063,7 @@ namespace MaFoi.Charts.Controllers
 
         public async Task<AuditReportData> GetDataForChart(ToDoFilterCriteria criteria)
         {
-            string Baseurl = "https://apiprouat.ezycomp.com/api/Auditor/GetAuditReportData"; //"https://localhost:7221/api/Auditor/GetAuditReportData";
+            string Baseurl = ConfigurationManager.AppSettings["apiurl"]; // "https://apipro.ezycomp.com/api/Auditor/GetAuditReportData"; //"https://localhost:7221/api/Auditor/GetAuditReportData";
                                                                                          //  //"
             AuditReportData reportData = new AuditReportData();
             using (var client = new HttpClient())
@@ -974,12 +1233,34 @@ namespace MaFoi.Charts.Controllers
     {
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
-            filterContext.RequestContext.HttpContext.Response.AddHeader("Access-Control-Allow-Origin", "https://apichartuat.ezycomp.com");
+            filterContext.RequestContext.HttpContext.Response.AddHeader("Access-Control-Allow-Origin", "*");
             filterContext.RequestContext.HttpContext.Response.AddHeader("Access-Control-Allow-Headers", "*");
             filterContext.RequestContext.HttpContext.Response.AddHeader("Access-Control-Allow-Credentials", "true");
 
             base.OnActionExecuting(filterContext);
         }
     }
+    public class PageNumberEventHandler : PdfPageEventHelper
+    {
+        public override void OnEndPage(PdfWriter writer, Document document)
+        {
+            base.OnEndPage(writer, document);
 
-}
+            // Create a PdfPTable to hold the page number
+            PdfPTable table = new PdfPTable(1);
+            table.TotalWidth = document.PageSize.Width;
+
+            // Create a PdfPCell to hold the page number text
+            PdfPCell cell = new PdfPCell(new Phrase("Page " + writer.PageNumber));
+            cell.HorizontalAlignment = Element.ALIGN_RIGHT;
+            cell.Border = PdfPCell.NO_BORDER;
+
+            // Add the cell to the table
+            table.AddCell(cell);
+
+            // Add the table to the document
+            table.WriteSelectedRows(0, -2, document.LeftMargin-30, document.BottomMargin +20, writer.DirectContent);
+        }
+    }
+
+} 
