@@ -237,6 +237,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Helper\DashboardReport.cs" />
     <Compile Include="Models\Act.cs" />
     <Compile Include="Models\Activity.cs" />
     <Compile Include="Models\ActRuleActivityMapping.cs" />
@@ -251,6 +252,7 @@
     <Compile Include="Models\City.cs" />
     <Compile Include="Models\Company.cs" />
     <Compile Include="Models\CompanyLocationMapping.cs" />
+    <Compile Include="Models\DashboardResponse.cs" />
     <Compile Include="Models\EmailTemplates.cs" />
     <Compile Include="Models\InternalCompliancesMapping.cs" />
     <Compile Include="Models\Law.cs" />
@@ -258,6 +260,7 @@
     <Compile Include="Models\Role.cs" />
     <Compile Include="Models\Rule.cs" />
     <Compile Include="Models\RuleComplianceDetail.cs" />
+    <Compile Include="Models\SearchParams.cs" />
     <Compile Include="Models\SMTPDetails.cs" />
     <Compile Include="Models\State.cs" />
     <Compile Include="Models\TemplateType.cs" />

@@ -11,3 +11,5 @@ namespace MaFoi.Charts.Models
         public string Description { get; set; }
     }
 }
+
+
