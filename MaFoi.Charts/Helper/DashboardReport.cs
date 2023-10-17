@@ -14,7 +14,12 @@ namespace MaFoi.Charts.Helper
 {
     public class DashboardReport
     {
-        public async Task<DashboardStatus> GetDataSashboardChartStatus(dashparams searchParams )
+        private string JwtToken;
+        public DashboardReport(string jwt)
+        {
+            JwtToken = jwt;
+        }
+        public async Task<DashboardStatus> GetDataSashboardChartStatus(dashparams searchParams)
         {
             string Baseurl = ConfigurationManager.AppSettings["apidashstatusurl"]; // "https://apipro.ezycomp.com/api/Auditor/GetAuditReportData"; //"https://localhost:7221/api/Auditor/GetAuditReportData";
                                                                          //  //"
@@ -25,14 +30,14 @@ namespace MaFoi.Charts.Helper
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // Set the authorization header with the JWT token
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", searchParams.JwtToken);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",JwtToken);
 
            //var request = new HttpRequestMessage() { RequestUri = new Uri(Baseurl) };
                 var payload = new SearchParams()
                 {
                     Search= string.IsNullOrEmpty(searchParams.Search)?"":searchParams.Search,
                     Filters=searchParams.Filters,
-                    Pagination=searchParams.Pagination,
+                   // Pagination=searchParams.Pagination,
                     Sort=searchParams.Sort,
                     IncludeCentral=searchParams.IncludeCentral
                 };
@@ -64,14 +69,14 @@ return reportstatus;
             using (var client = new HttpClient())
             {
                 // Set the authorization header with the JWT token
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", searchParams.JwtToken);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", JwtToken);
 
                 var request = new HttpRequestMessage() { RequestUri = new Uri(Baseurl) };
                 var payload = new SearchParams()
                 {
                     Search = string.IsNullOrEmpty(searchParams.Search)?"":searchParams.Search,
                     Filters = searchParams.Filters,
-                    Pagination = searchParams.Pagination,
+                   // Pagination = searchParams.Pagination,
                     Sort = searchParams.Sort,
                     IncludeCentral = searchParams.IncludeCentral
                 };
@@ -98,15 +103,19 @@ return reportstatus;
             DashBoardreport report = new DashBoardreport();
             using (var client = new HttpClient())
             {
+                Paging paging = new Paging();
+                paging.PageSize = 500;
+                paging.PageNumber = 1;
+                searchParams.Pagination = paging;
                 // Set the authorization header with the JWT token
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", searchParams.JwtToken);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", JwtToken);
 
                 var request = new HttpRequestMessage() { RequestUri = new Uri(Baseurl) };
                 var payload = new SearchParams()
                 {
                     Search = string.IsNullOrEmpty(searchParams.Search) ? "" : searchParams.Search,
                     Filters = searchParams.Filters,
-                    Pagination = searchParams.Pagination,
+                   Pagination = searchParams.Pagination,
                     Sort = searchParams.Sort,
                     IncludeCentral = searchParams.IncludeCentral
                 };

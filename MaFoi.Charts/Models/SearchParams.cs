@@ -41,7 +41,7 @@ namespace MaFoi.Charts.Models
 
     public class  dashparams: SearchParams
     {
-        public string JwtToken { get; set; }
+        
     }
 
 }

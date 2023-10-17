@@ -11,6 +11,7 @@ namespace MaFoi.Charts.Models
         public string Company { get; set; }
         public string AssociateCompany { get; set; }
         public string Location { get; set; }
+        public string Address { get; set; }
         public string Month { get; set; }
         public int Year { get; set; }
         public int Audited { get; set; }
