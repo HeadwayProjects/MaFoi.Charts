@@ -30,14 +30,14 @@ namespace MaFoi.Charts.Helper
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
                 // Set the authorization header with the JWT token
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",JwtToken);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer",JwtToken);
 
            //var request = new HttpRequestMessage() { RequestUri = new Uri(Baseurl) };
                 var payload = new SearchParams()
                 {
                     Search= string.IsNullOrEmpty(searchParams.Search)?"":searchParams.Search,
                     Filters=searchParams.Filters,
-                   // Pagination=searchParams.Pagination,
+                    Pagination=searchParams.Pagination,
                     Sort=searchParams.Sort,
                     IncludeCentral=searchParams.IncludeCentral
                 };
@@ -69,14 +69,14 @@ return reportstatus;
             using (var client = new HttpClient())
             {
                 // Set the authorization header with the JWT token
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", JwtToken);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", JwtToken);
 
                 var request = new HttpRequestMessage() { RequestUri = new Uri(Baseurl) };
                 var payload = new SearchParams()
                 {
                     Search = string.IsNullOrEmpty(searchParams.Search)?"":searchParams.Search,
                     Filters = searchParams.Filters,
-                   // Pagination = searchParams.Pagination,
+                   Pagination = searchParams.Pagination,
                     Sort = searchParams.Sort,
                     IncludeCentral = searchParams.IncludeCentral
                 };
@@ -108,7 +108,7 @@ return reportstatus;
                 paging.PageNumber = 1;
                 searchParams.Pagination = paging;
                 // Set the authorization header with the JWT token
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", JwtToken);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("bearer", JwtToken);
 
                 var request = new HttpRequestMessage() { RequestUri = new Uri(Baseurl) };
                 var payload = new SearchParams()

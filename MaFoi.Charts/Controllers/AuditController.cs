@@ -1443,7 +1443,8 @@ namespace MaFoi.Charts.Controllers
         {
 
             string jwttoken = HttpContext.Request.Headers["Authorization"];
-            jwttoken = jwttoken.Replace("Bearer", "");
+            jwttoken = jwttoken.Replace("Bearer ", "");
+            jwttoken = jwttoken.Replace("bearer ", "");
 
 
             var doc = new Document(PageSize.LETTER, 2f, 2f, 2f, 2f);
@@ -1473,12 +1474,27 @@ namespace MaFoi.Charts.Controllers
 
 
             #region Top Summary
+            string month = string.Empty;
+            string year = string.Empty;
+            foreach (var filter in searchParams.Filters)
+            {
+                if (filter.ColumnName.ToLower() == "month")
+                {
+                    month = filter.Value;
+                }
+                if (filter.ColumnName.ToLower() == "year")
+                {
+                    year = filter.Value;
+                }
+            }
+           month= string.IsNullOrEmpty(month) ? "September" : month;
+            year = string.IsNullOrEmpty(year) ? "2023" : year;
 
             PdfPTable tblTopSummary = new PdfPTable(1);
             tblTopSummary.SpacingBefore = 10f;
             tblTopSummary.SpacingAfter = 10f;
 
-            var reportHeading = String.Format("Compliance Report for {0}-{1}", "September", "2023");
+            var reportHeading = String.Format("Compliance Report for {0}-{1}", month, year);
 
             PdfPCell cellHeading = new PdfPCell(new Phrase(reportHeading, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 16f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
             cellHeading.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
@@ -1731,11 +1747,88 @@ namespace MaFoi.Charts.Controllers
             doc.Add(new Paragraph(" "));
             doc.SetPageSize(iTextSharp.text.PageSize.A4.Rotate());
 
+            //MMapping 
+            List<ComplainceDeptVerticalMap> listcomplaincesdepvertial = new List<ComplainceDeptVerticalMap>();
+
+               foreach (var todo in report.rulelist)
+               {
+               
+                    ComplainceDeptVerticalMap mapping = new ComplainceDeptVerticalMap();
+                    mapping.LawCategory = todo.ToDo.act.Law.Name;
+                    mapping.Act = todo.ToDo.act.name;
+                    mapping.Rule = todo.ToDo.rule.name;
+                    mapping.Activity = todo.ToDo.activity.name;
+                    mapping.RuleNo = todo.ToDo.rule.ruleNo;
+                    mapping.SectionNo = todo.ToDo.rule.sectionNo;
+                    mapping.ActivityType = todo.ToDo.activity.type;
+                    mapping.Status = todo.ToDo.status;
+                    mapping.Remarks = todo.ToDo.formsStatusRemarks;
+                    mapping.departmentName = todo.ToDo.department.name;
+                    mapping.VerticalName = todo.ToDo.veritical.name;
+                    string Impriosonment = todo.RuleComplianceDetails.Impriosonment == true ? "Imprisonment" : "";
+                    string ContinuingPenalty = todo.RuleComplianceDetails.ContinuingPenalty == true ? "ContinuingPenalty" : "";
+                    string CancellationSuspensionOfLicense = todo.RuleComplianceDetails.CancellationSuspensionOfLicense == true ? "CancellationSuspensionOfLicense" : "";
+                    string impact = "";
+                    if (string.IsNullOrEmpty(Impriosonment) && string.IsNullOrEmpty(ContinuingPenalty) && string.IsNullOrEmpty(CancellationSuspensionOfLicense))
+                    {
+                        impact = "Nill";
+                    }
+                    else if (!string.IsNullOrEmpty(Impriosonment) && !string.IsNullOrEmpty(ContinuingPenalty) && !string.IsNullOrEmpty(CancellationSuspensionOfLicense))
+                    {
+                        impact = Impriosonment + "," + ContinuingPenalty + "," + CancellationSuspensionOfLicense;
+                    }
+                    else if (!string.IsNullOrEmpty(Impriosonment) && string.IsNullOrEmpty(ContinuingPenalty) && string.IsNullOrEmpty(CancellationSuspensionOfLicense))
+                    {
+                        impact = Impriosonment;
+                    }
+                    else if (!string.IsNullOrEmpty(Impriosonment) && !string.IsNullOrEmpty(ContinuingPenalty) && string.IsNullOrEmpty(CancellationSuspensionOfLicense))
+                    {
+                        impact = Impriosonment + "," + ContinuingPenalty;
+                    }
+                    else if (!string.IsNullOrEmpty(Impriosonment) && string.IsNullOrEmpty(ContinuingPenalty) && !string.IsNullOrEmpty(CancellationSuspensionOfLicense))
+                    {
+                        impact = Impriosonment + "," + CancellationSuspensionOfLicense;
+                    }
+                    else if (string.IsNullOrEmpty(Impriosonment) && !string.IsNullOrEmpty(ContinuingPenalty) && string.IsNullOrEmpty(CancellationSuspensionOfLicense))
+                    {
+                        impact = ContinuingPenalty;
+                    }
+                    else if (string.IsNullOrEmpty(Impriosonment) && !string.IsNullOrEmpty(ContinuingPenalty) && !string.IsNullOrEmpty(CancellationSuspensionOfLicense))
+                    {
+                        impact = ContinuingPenalty + "," + CancellationSuspensionOfLicense;
+                    }
+                    else if (string.IsNullOrEmpty(Impriosonment) && string.IsNullOrEmpty(ContinuingPenalty) && !string.IsNullOrEmpty(CancellationSuspensionOfLicense))
+                    {
+                        impact = CancellationSuspensionOfLicense;
+                    }
+
+                    Dictionary<string, string> myDictionary = new Dictionary<string, string>
+                            {
+            {"Complaince Description", todo.RuleComplianceDetails.ComplianceDescription },
+                        { "Risk" ,todo.RuleComplianceDetails.Risk },
+                         {"Audit Type" , todo.RuleComplianceDetails.AuditType },
+                        {"Statutory Authority" ,todo.RuleComplianceDetails.StatutoryAuthority },
+                        {"Proof of Complaince" , todo.RuleComplianceDetails.ProofOfCompliance },
+                        { "Penalty" , todo.RuleComplianceDetails.Penalty },
+                        {"Maximum Penality Amount" ,todo.RuleComplianceDetails.MaximumPenaltyAmount.ToString() },
+                     { "Impact" , impact }
+
+                      };
+                    mapping.Description = myDictionary;
+
+
+
+                listcomplaincesdepvertial.Add(mapping);
+
+
+
+            }
+
 
             //Compliance Report of [Vertical] and [Department}
 
-            List<DashboardTblResponse> listresponse = new List<DashboardTblResponse>();
-            var listdata = report.list.GroupBy(a => new { a.department.name }).Distinct().ToList();
+          
+            var listdata = listcomplaincesdepvertial.GroupBy(a => new {a.VerticalName, a.departmentName }).Distinct().ToList();
 
             //foreach (var data in listdata)
             //{
@@ -1773,7 +1866,7 @@ namespace MaFoi.Charts.Controllers
                 PdfPTable tblAuditSummary = new PdfPTable(1);
                 tblAuditSummary.SpacingBefore = 10f;
                 tblAuditSummary.SpacingAfter = 10f;
-                var complaineheading = String.Format(i.ToString()+".Compliance Report of {0}", data.Key.name);
+                var complaineheading = String.Format(i.ToString() + ".Compliance Report of {0}-{1}", data.Key.VerticalName, data.Key.departmentName);
 
                 PdfPCell cellaudit = new PdfPCell(new Phrase(complaineheading, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 16f, iTextSharp.text.Font.BOLD | iTextSharp.text.Font.UNDERLINE, BaseColor.BLACK)));
                 cellaudit.BorderColor = new iTextSharp.text.BaseColor(Color.Black);
@@ -1815,7 +1908,7 @@ namespace MaFoi.Charts.Controllers
                     table.AddCell(cell);
                 }
 
-                var datalist = report.list.Where(a => a.department.name.Equals(data.Key.name)).ToList();
+                var datalist = listcomplaincesdepvertial.Where(a => a.departmentName.Equals(data.Key.departmentName) && a.VerticalName.Equals(data.Key.VerticalName)).ToList();
                 int serialNo = 0;
                 foreach (var todo in datalist)
                 {
@@ -1824,26 +1917,32 @@ namespace MaFoi.Charts.Controllers
                     cCell.HorizontalAlignment = 1;
                     cCell.VerticalAlignment = 1;
                     table.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(todo.act.law != null ? todo.act.law.ToString() : "NA", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell = new PdfPCell(new Phrase(todo.LawCategory, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     table.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(todo.act.name, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell = new PdfPCell(new Phrase(todo.Act, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     table.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(todo.rule.name, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell = new PdfPCell(new Phrase(todo.Rule, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     table.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(todo.activity.name, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell = new PdfPCell(new Phrase(todo.Activity, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     table.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(todo.rule.ruleNo, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell = new PdfPCell(new Phrase(todo.RuleNo, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     table.AddCell(cCell);
 
-                    cCell = new PdfPCell(new Phrase(todo.rule.sectionNo, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell = new PdfPCell(new Phrase(todo.SectionNo, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     table.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(todo.activity.type, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell = new PdfPCell(new Phrase(todo.ActivityType, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     table.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(todo.rule.description, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    Paragraph cell1Text = new Paragraph();
+                    foreach (var kvp in todo.Description)
+                    {
+                        cell1Text.Add(new Chunk(kvp.Key.ToString() + ":", new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.BOLD, BaseColor.BLACK)));
+                        cell1Text.Add(new Chunk(kvp.Value, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                        cell1Text.Add(", ");
+                    }
+                    table.AddCell(cell1Text);
+                    cCell = new PdfPCell(new Phrase(todo.Status, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     table.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase(todo.auditStatus, new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
-                    table.AddCell(cCell);
-                    cCell = new PdfPCell(new Phrase((!string.IsNullOrEmpty(todo.auditRemarks) ? todo.auditRemarks : ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
+                    cCell = new PdfPCell(new Phrase((!string.IsNullOrEmpty(todo.Remarks) ? todo.Remarks : ""), new iTextSharp.text.Font(iTextSharp.text.Font.FontFamily.HELVETICA, 8f, iTextSharp.text.Font.NORMAL, BaseColor.BLACK)));
                     table.AddCell(cCell);
 
                     serialNo++;
@@ -1878,8 +1977,8 @@ namespace MaFoi.Charts.Controllers
         {
 
             string jwttoken = HttpContext.Request.Headers["Authorization"];
-            jwttoken = jwttoken.Replace("Bearer", "");
-
+            jwttoken = jwttoken.Replace("Bearer ", "");
+            jwttoken = jwttoken.Replace("bearer ", "");
 
             var doc = new Document(PageSize.LETTER, 2f, 2f, 2f, 2f);
             var pdf = Server.MapPath("Chart") + "/DashboardChart" + Guid.NewGuid() + ".pdf";

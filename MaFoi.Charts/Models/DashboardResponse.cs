@@ -35,7 +35,7 @@ namespace MaFoi.Charts.Models
         public string name { get; set; }
         public string establishmentType { get; set; }
         public string lawId { get; set; }
-        public object law { get; set; }
+        public Law Law { get; set; }
         public string id { get; set; }
         public DateTime createdDate { get; set; }
         public DateTime lastUpdatedDate { get; set; }
@@ -273,10 +273,15 @@ namespace MaFoi.Charts.Models
         public DateTime createdDate { get; set; }
         public DateTime lastUpdatedDate { get; set; }
     }
-
+    public class ToDoWithRuleCompliancedata
+    {
+        public DashBoardList ToDo { get; set; }
+        public RuleComplianceDetail RuleComplianceDetails { get; set; }
+    }
     public class DashBoardreport
     {
         public List<DashBoardList> list { get; set; }
+        public List<ToDoWithRuleCompliancedata> rulelist { get; set; }
         public int count { get; set; }
         public List<StatusCount> statusCount { get; set; }
     }
@@ -342,6 +347,22 @@ namespace MaFoi.Charts.Models
         public string Remarks { get; set; }
         public string Description { get; set; }
 
+    }
+
+    public class ComplainceDeptVerticalMap
+    {
+       public string LawCategory { get; set; }
+        public string Act { get; set; }
+        public string Rule { get; set; }
+        public string Activity { get; set; }
+        public string RuleNo { get; set; }
+        public string SectionNo { get; set; }
+        public string  ActivityType { get; set; }
+        public Dictionary<string, string> Description { get; set; }
+        public string  Status { get; set; }
+         public string Remarks { get; set; }
+        public string departmentName { get; set; }
+        public string VerticalName { get; set; }
     }
 
 }
